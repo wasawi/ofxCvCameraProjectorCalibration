@@ -15,31 +15,35 @@ void ofApp::setup(){
     ofEnableSmoothing();
     ofSetCircleResolution(30);
     ofBackground(0,0,0);
+	ofSetFrameRate(30);
     
+	// init camera
 	cam.initGrabber(640, 480);
+	// duplicate image properties into ofPixels
 	imitate(previous, cam);
 	imitate(diff, cam);
     
-    screenRect.set(0,0,1280,800);
-    projectorRect.set(1280,0,1280,800);
-    
+	setState(CAMERA);
+	// draw UI on the left
+	screenRect.set(0,0,1280,800);
+    // use second screen for projection
+	projectorRect.set(1280,0,1280,800);
+	// setup calibrator
     camProjCalib.setup(projectorRect.width, projectorRect.height);
     
+	// create UI with default settings
     setupDefaultParams();
     setupGui();
     
 	lastTime = 0;
-    bProjectorRefreshLock = true;
-    
+    bProjectorRefreshLock = true;    
     bLog = true;
-    
-    setState(PROJECTOR_STATIC);
-    
+
     log() << "Calibration started at step : " << getCurrentStateString() << endl;
 }
 
 void ofApp::setupDefaultParams(){
-    
+
     appParams.setName("Application");
     appParams.add( diffMinBetweenFrames.set("Difference min between frames", 4.0, 0, 10) );
     appParams.add( timeMinBetweenCaptures.set("Time min between captures", 2.0, 0, 10) );
@@ -147,8 +151,9 @@ void ofApp::update(){
             case PROJECTOR_DYNAMIC:
                 if(bProjectorRefreshLock){
                     if( camProjCalib.setDynamicProjectorImagePoints(camMat) ){
-                        if( !updateCamDiff(camMat) ) return;
-                        
+						if (!updateCamDiff(camMat)) {
+							return;
+						}
                         bProjectorRefreshLock = false;
                     }
                 }
@@ -198,14 +203,15 @@ bool ofApp::calibrateCamera(cv::Mat img){
         log() << "Found board!" << endl;
         
         calibrationCamera.calibrate();
-        
+
         if(calibrationCamera.size() >= numBoardsBeforeCleaning) {
             
             log() << "Cleaning" << endl;
             
-            calibrationCamera.clean(maxReprojErrorCamera);
-            
-            if(calibrationCamera.getReprojectionError(calibrationCamera.size()-1) > maxReprojErrorCamera) {
+			if (calibrationCamera.clean(maxReprojErrorCamera) == false) {
+				log() << "clean returns false" << endl;
+			}
+			else if(calibrationCamera.getReprojectionError(calibrationCamera.size()-1) > maxReprojErrorCamera) {
                 log() << "Board found, but reproj. error is too high, skipping" << endl;
                 return false;
             }
@@ -213,6 +219,7 @@ bool ofApp::calibrateCamera(cv::Mat img){
         
         if (calibrationCamera.size()>=numBoardsFinalCamera) {
             
+			// save camera intrinsics
             calibrationCamera.save("calibrationCamera.yml");
             
             log() << "Camera calibration finished & saved to calibrationCamera.yml" << endl;
@@ -317,7 +324,7 @@ void ofApp::draw(){
             break;
     }
     
-    ofDrawBitmapString(getLog(20), 10, cam.height+20);
+    ofDrawBitmapString(getLog(20), 10, cam.getHeight()+20);
 }
 
 void ofApp::drawReprojErrors(string name, const ofxCv::Calibration & calib, int y){
@@ -343,7 +350,7 @@ void ofApp::drawLastCameraImagePoints(){
     
     ofPushStyle(); ofSetColor(ofColor::blue);
     for(const auto & p : imagePoints.back()) {
-        ofCircle(ofxCv::toOf(p), 3);
+        ofDrawCircle(ofxCv::toOf(p), 3);
     }
     ofPopStyle();
 }

@@ -14,6 +14,8 @@
 #include "ofMain.h"
 #include "ofxCv.h"
 
+using namespace cv;
+
 namespace ofxCv {
     
     class CalibrationPatched : public Calibration {

@@ -86,3 +86,18 @@ Desktop.ini
 # Miscellaneous
 .mailmap
 
+
+# mine
+addons/
+*.dll
+*.obj
+*.exe
+*.exp
+*.lib
+*.ilk
+*.sln
+*.filters
+*.user
+*.vcxproj
+*.yml
+
